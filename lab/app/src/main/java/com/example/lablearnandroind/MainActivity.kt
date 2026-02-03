@@ -1,5 +1,6 @@
 package com.example.lablearnandroind
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -29,6 +30,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -68,6 +70,9 @@ class MainActivity : ComponentActivity() {
                             .size(500.dp)
                             .align(Alignment.CenterHorizontally)
                             .padding(32.dp)
+                            .clickable {
+                                startActivity(Intent(this@MainActivity,ListActivity::class.java))
+                            }
 
                     )
                     var str by remember { mutableStateOf(8) }
