@@ -1,4 +1,4 @@
-package com.example.lablearnandroind
+package com.example.lablearnandroid
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity

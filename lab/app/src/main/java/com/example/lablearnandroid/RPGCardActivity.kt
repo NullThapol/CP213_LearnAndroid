@@ -1,4 +1,4 @@
-package com.example.lablearnandroind
+package com.example.lablearnandroid
 
 import android.content.Intent
 import android.os.Bundle
@@ -31,7 +31,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-class MainActivity : ComponentActivity() {
+class RPGCardActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -65,7 +65,7 @@ class MainActivity : ComponentActivity() {
                             .align(Alignment.CenterHorizontally)
                             .padding(32.dp)
                             .clickable {
-                                startActivity(Intent(this@MainActivity,PokedexActivity::class.java))
+                                startActivity(Intent(this@RPGCardActivity,PokedexActivity::class.java))
                             }
 
                     )

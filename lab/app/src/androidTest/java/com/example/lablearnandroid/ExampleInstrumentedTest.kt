@@ -1,4 +1,4 @@
-package com.example.lablearnandroind
+package com.example.lablearnandroid
 
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4

@@ -1,4 +1,4 @@
-package com.example.lablearnandroind
+package com.example.lablearnandroid
 
 import org.junit.Test
 

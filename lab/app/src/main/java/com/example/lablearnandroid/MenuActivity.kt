@@ -1,4 +1,4 @@
-package com.example.lablearnandroind
+package com.example.lablearnandroid
 
 import android.content.Intent
 import android.os.Bundle
@@ -8,10 +8,8 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Button
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.ui.Modifier
-import com.example.lablearnandroind.ui.theme.LabLearnAndroindTheme
 
 class MenuActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -20,7 +18,7 @@ class MenuActivity : ComponentActivity() {
         setContent {
             Column(modifier = Modifier.fillMaxSize()) {
                 Button(onClick =  {
-                    startActivity(Intent(this@MenuActivity, MainActivity::class.java))
+                    startActivity(Intent(this@MenuActivity, RPGCardActivity::class.java))
                 }){
                     Text("RPGCardActivity")
                 }
