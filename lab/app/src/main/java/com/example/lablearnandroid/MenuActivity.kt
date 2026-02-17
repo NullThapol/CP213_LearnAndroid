@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.ui.Modifier
+import com.example.lablearnandroid.architecture.mvi.MviCounterActivity
+import com.example.lablearnandroid.architecture.mvvm.MvvmCounterActivity
 
 class MenuActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -31,6 +33,25 @@ class MenuActivity : ComponentActivity() {
                     startActivity(Intent(this@MenuActivity, LifeCycleComposeActivity::class.java))
                 }){
                     Text("LifeCycleComposeActivity")
+
+                }
+                Button(onClick =  {
+                    startActivity(Intent(this@MenuActivity, MviCounterActivity::class.java))
+                }){
+                    Text("MviCounterActivity")
+
+                }
+                Button(onClick =  {
+                    startActivity(Intent(this@MenuActivity, MvvmCounterActivity::class.java))
+                }){
+                    Text("MvvmCounterActivity")
+
+                }
+                Button(onClick =  {
+                    startActivity(Intent(this@MenuActivity, SharedPreferencesActivity::class.java))
+                }){
+                    Text("SharedPreferencesActivity")
+
                 }
             }
         }
