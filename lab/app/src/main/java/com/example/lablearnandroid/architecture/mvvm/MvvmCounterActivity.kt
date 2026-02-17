@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -51,5 +52,7 @@ fun MvvmCounterScreen(viewModel: MvvmCounterViewModel) {
         Button(onClick = { viewModel.onDecrementClicked() }) {
             Text(text = "Decrement")
         }
-    }
-}
+
+
+            }
+        }

@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -69,4 +70,10 @@ dependencies {
 
     // Lifecycle & ViewModel สำหรับ Compose
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.0")
+
+    // Firebase BOM (ตัวจัดการเวอร์ชั่น ให้มันเลือกเวอร์ชั่นที่เข้ากันได้เอง)
+    implementation(platform("com.google.firebase:firebase-bom:33.0.0"))
+
+    // Cloud Firestore Library
+    implementation("com.google.firebase:firebase-firestore")
 }
