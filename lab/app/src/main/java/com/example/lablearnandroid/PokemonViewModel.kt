@@ -26,6 +26,7 @@ class PokemonViewModel : ViewModel() {
                 _pokemonList.value = response.pokemon_entries
 
             } catch (e: Exception) {
+                //
                 // จัดการ Error (เช่น Log หรือโชว์ Toast)
                 e.printStackTrace()
             }
