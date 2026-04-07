@@ -2,7 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
-    id("com.google.gms.google-services")
+    // id("com.google.gms.google-services") // Commented out because google-services.json is missing
 }
 
 android {
@@ -76,4 +76,7 @@ dependencies {
 
     // Cloud Firestore Library
     implementation("com.google.firebase:firebase-firestore")
+
+    // Location
+    implementation("com.google.android.gms:play-services-location:21.2.0")
 }

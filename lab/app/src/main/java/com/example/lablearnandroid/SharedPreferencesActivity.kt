@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.lablearnandroid.ui.theme.LabLearnAndroindTheme
+import com.example.lablearnandroid.utils.SharedPreferencesUtil
 
 class SharedPreferencesActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

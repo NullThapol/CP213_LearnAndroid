@@ -1,6 +1,6 @@
 package com.example.lablearnandroid
 
-import PokemonViewModel
+//import PokemonViewModel
 import android.annotation.SuppressLint
 import android.os.Bundle
 import android.util.Log
