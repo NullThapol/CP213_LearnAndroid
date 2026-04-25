@@ -26,6 +26,14 @@ import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 
+import androidx.compose.foundation.layout.Row
+import androidx.compose.material3.Divider
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Spacer
+
 @Composable
 fun CardsScreen(
     card: String?, 
@@ -37,55 +45,93 @@ fun CardsScreen(
 
     Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         if (card != null) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            val fortune = getCardFortune(card)
+            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(16.dp)) {
                 Surface(
-                    modifier = Modifier.size(width = 280.dp, height = 400.dp),
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    tonalElevation = 8.dp,
-                    shadowElevation = 8.dp
+                    modifier = Modifier.fillMaxWidth(0.9f).height(480.dp),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp),
+                    color = MaterialTheme.colorScheme.surface,
+                    tonalElevation = 4.dp,
+                    shadowElevation = 12.dp,
+                    border = androidx.compose.foundation.BorderStroke(2.dp, fortune.color.copy(alpha = 0.5f))
                 ) {
                     Column(
-                        modifier = Modifier.fillMaxSize().padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center
+                        modifier = Modifier.fillMaxSize().padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
                             text = "TODAY'S LUCK",
                             style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                            color = fortune.color,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 2.sp
                         )
                         
                         Text(
-                            text = card,
-                            fontSize = 48.sp,
+                            text = fortune.name,
+                            fontSize = 34.sp,
                             fontWeight = FontWeight.ExtraBold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier.padding(vertical = 24.dp)
+                            color = fortune.color,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(top = 16.dp)
+                        )
+
+                        Text(
+                            text = "[ ${fortune.luckLevel} ]",
+                            fontWeight = FontWeight.Bold,
+                            color = fortune.color.copy(alpha = 0.7f),
+                            modifier = Modifier.padding(bottom = 16.dp)
                         )
                         
+                        Divider(color = fortune.color.copy(alpha = 0.3f), thickness = 1.dp)
+                        
                         Text(
-                            text = "Legendary Sword Found",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                            text = fortune.description,
+                            style = MaterialTheme.typography.bodyLarge,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(vertical = 24.dp),
+                            lineHeight = 24.sp
                         )
+
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Row(modifier = Modifier.fillMaxWidth()) {
+                                Text("Pros: ", fontWeight = FontWeight.Bold, color = Color(0xFF4CAF50))
+                                Text(fortune.pro, style = MaterialTheme.typography.bodyMedium)
+                            }
+                            if (fortune.con != "-") {
+                                Row(modifier = Modifier.fillMaxWidth()) {
+                                    Text("Cons: ", fontWeight = FontWeight.Bold, color = Color(0xFFF44336))
+                                    Text(fortune.con, style = MaterialTheme.typography.bodyMedium)
+                                }
+                            }
+                        }
+                        
+                        Spacer(modifier = Modifier.weight(1f))
+                        
+                        Divider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+                        
+                        // ปุ่ม Favorite ด้านใน Card
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
+                        ) {
+                            Text("Add to Favorites", style = MaterialTheme.typography.bodySmall)
+                            IconButton(
+                                onClick = { 
+                                    onFavoriteToggle(card)
+                                    isFavorited = !isFavorited
+                                }
+                            ) {
+                                Icon(
+                                    imageVector = if (isFavorited) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                                    contentDescription = "Favorite",
+                                    tint = if (isFavorited) Color.Red else fortune.color,
+                                    modifier = Modifier.size(32.dp)
+                                )
+                            }
+                        }
                     }
-                }
-                
-                // ปุ่ม Favorite
-                IconButton(
-                    onClick = { 
-                        onFavoriteToggle(card)
-                        isFavorited = !isFavorited
-                    },
-                    modifier = Modifier.padding(top = 16.dp)
-                ) {
-                    Icon(
-                        imageVector = if (isFavorited) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-                        contentDescription = "Favorite",
-                        tint = if (isFavorited) Color.Red else MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(48.dp)
-                    )
                 }
             }
         } else {

@@ -15,6 +15,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Divider
 import androidx.compose.material3.Switch
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -58,6 +60,73 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
+
+import androidx.compose.ui.graphics.Color
+
+data class CardFortune(
+    val name: String,
+    val luckLevel: String,
+    val description: String,
+    val pro: String,
+    val con: String,
+    val color: Color
+)
+
+fun getCardFortune(cardName: String): CardFortune {
+    return when (cardName) {
+        "Card 1" -> CardFortune(
+            "The Absolute Destiny", "Legendary", 
+            "วันนี้สวรรค์เข้าข้างคุณในทุกย่างก้าว ความสำเร็จรอคุณอยู่ทุกที่",
+            "ดีเยี่ยมทุกด้าน (การงาน, การเงิน, ความรัก, สุขภาพ)", "-", Color(0xFFFFD700)
+        )
+        "Card 2" -> CardFortune(
+            "The Gilded Heart", "Great Luck", 
+            "ความรักเบ่งบานจนคนรอบข้างอิจฉา แต่อย่าเปย์คนรักจนหมดตัวล่ะ",
+            "ความรักระดับสูงสุด", "การเงินรั่วไหลเล็กน้อย (เปย์หนัก)", Color(0xFFFF69B4)
+        )
+        "Card 3" -> CardFortune(
+            "The Merchant’s Greed", "Great Luck", 
+            "เงินทองไหลมาเทมาดั่งสายน้ำ แต่ระวังจะโดนเพื่อนขอยืมเงินนะ",
+            "โชคลาภ/การเงินดีเยี่ยม", "สังคม/เพื่อนฝูง (ระวังคนหวังผลประโยชน์)", Color(0xFF4CAF50)
+        )
+        "Card 4" -> CardFortune(
+            "The Scholar’s Peak", "Great Luck", 
+            "สมองแจ่มใส ทำงานหรือสอบอะไรก็ผ่านฉลุย แต่ระวังลืมเวลานอน",
+            "การงาน/การเรียนโดดเด่น", "สุขภาพ (ระวังพักผ่อนไม่เพียงพอ)", Color(0xFF2196F3)
+        )
+        "Card 5" -> CardFortune(
+            "The Balanced Path", "Normal Luck", 
+            "สุขภาพร่างกายแข็งแรงดีมาก แต่อาจมีเรื่องผิดใจกับคนรักเล็กน้อย",
+            "สุขภาพดี/ร่างกายแข็งแรง", "ความรัก (มีเรื่องเข้าใจผิดเล็กๆ)", Color(0xFF8BC34A)
+        )
+        "Card 6" -> CardFortune(
+            "The Social Butterfly", "Normal Luck", 
+            "ไปไหนก็มีแต่คนยิ้มให้ เพื่อนฝูงห้อมล้อม แต่ระวังงานจะคั่งค้าง",
+            "มนุษยสัมพันธ์/เพื่อนฝูงดี", "การงาน (มีความขี้เกียจครอบงำ)", Color(0xFF00BCD4)
+        )
+        "Card 7" -> CardFortune(
+            "The Steady Hand", "Normal Luck", 
+            "จิตใจสงบนิ่ง มีสมาธิดีเยี่ยม แต่อาจจะพลาดโอกาสลาภลอยไปบ้าง",
+            "ความนิ่ง/การตัดสินใจดี", "โชคลาภ (ลาภลอยยังมาไม่ถึง)", Color(0xFF9E9E9E)
+        )
+        "Card 8" -> CardFortune(
+            "The Broken Compass", "Bad Luck", 
+            "วันนี้ทำอะไรก็ติดขัดไปหมด แต่ดวงเก็บเงินที่ตกตามพื้นดีเป็นพิเศษ",
+            "ดวงดีเรื่อง: เก็บเศษเหรียญตามพื้น", "การงาน/การเรียน (ติดขัดขั้นสุด)", Color(0xFF795548)
+        )
+        "Card 9" -> CardFortune(
+            "The Stormy Heart", "Bad Luck", 
+            "ความรักดูหม่นหมองเหมือนฝนจะตก แต่ดวงเดาพยากรณ์อากาศแม่นมาก",
+            "ดวงดีเรื่อง: ทายว่าฝนจะตกตอนไหน", "ความรัก (นก/เหงา/โดนเมิน)", Color(0xFF607D8B)
+        )
+        "Card 10" -> CardFortune(
+            "The Empty Purse", "Bad Luck", 
+            "กระเป๋าตังค์แห้งเหี่ยวหยิบอะไรก็พลาด แต่ดวงกดลุ้นของกินฟรีดีมาก",
+            "ดวงดีเรื่อง: ได้ของกินแถม/น้ำฟรี", "การเงิน (กระเป๋ารั่ว/เสียเงินฟรี)", Color(0xFF37474F)
+        )
+        else -> CardFortune("Unknown", "N/A", "ไม่มีข้อมูล", "-", "-", Color.Gray)
+    }
+}
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -256,40 +325,77 @@ fun PlayScreen(
     val cardList = List(10) { "Card ${it + 1}" }
 
     if (showCardDialog && pulledCard != null) {
+        val fortune = getCardFortune(pulledCard!!)
         AlertDialog(
             onDismissRequest = { 
                 showCardDialog = false
-                // รีเซ็ตตำแหน่งดาบและปลดล็อกเมื่อกลับลงมา
                 coroutineScope.launch { 
                     yOffset.animateTo(0f)
                     isPullingSuccess = false
                 }
             },
-            title = { Text("You Found a Legendary Sword!") },
-            text = { 
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            title = { 
+                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
                     Text(
-                        text = pulledCard!!,
-                        style = androidx.compose.ui.text.TextStyle(
-                            fontSize = 32.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = MaterialTheme.colorScheme.secondary
-                        )
+                        text = if (fortune.luckLevel == "Legendary") "CONGRATULATIONS!" else "Sword Found!",
+                        color = if (fortune.luckLevel == "Legendary") Color(0xFFFFD700) else MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 24.sp
                     )
-                    Text("It was embedded deep in the stone!")
+                }
+            },
+            text = { 
+                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        text = fortune.name,
+                        style = androidx.compose.ui.text.TextStyle(
+                            fontSize = 28.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = fortune.color
+                        ),
+                        textAlign = TextAlign.Center
+                    )
+                    Text(
+                        text = "[ ${fortune.luckLevel} ]",
+                        color = fortune.color.copy(alpha = 0.8f),
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    
+                    Divider(color = fortune.color.copy(alpha = 0.3f), thickness = 1.dp)
+                    
+                    Text(
+                        text = fortune.description,
+                        style = MaterialTheme.typography.bodyLarge,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(vertical = 12.dp)
+                    )
+                    
+                    Row(modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
+                        Text("Pros: ", fontWeight = FontWeight.Bold, color = Color(0xFF4CAF50))
+                        Text(fortune.pro, style = MaterialTheme.typography.bodyMedium)
+                    }
+                    if (fortune.con != "-") {
+                        Row(modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
+                            Text("Cons: ", fontWeight = FontWeight.Bold, color = Color(0xFFF44336))
+                            Text(fortune.con, style = MaterialTheme.typography.bodyMedium)
+                        }
+                    }
                 }
             },
             confirmButton = {
-                Button(onClick = { 
-                    onCardCollected(pulledCard!!) // ส่งการ์ดที่ได้กลับไป
-                    showCardDialog = false 
-                    // รีเซ็ตตำแหน่งดาบและปลดล็อกเมื่อกดเก็บ
-                    coroutineScope.launch { 
-                        yOffset.animateTo(0f)
-                        isPullingSuccess = false
-                    }
-                }) {
-                    Text("Collect")
+                Button(
+                    onClick = { 
+                        onCardCollected(pulledCard!!)
+                        showCardDialog = false 
+                        coroutineScope.launch { 
+                            yOffset.animateTo(0f)
+                            isPullingSuccess = false
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = fortune.color)
+                ) {
+                    Text("Collect", color = Color.White)
                 }
             }
         )
