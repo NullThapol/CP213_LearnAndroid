@@ -78,6 +78,39 @@ fun MainAppScreen() {
     val navController = rememberNavController()
     var collectedCard by remember { mutableStateOf<String?>(null) }
     val collectionsList = remember { androidx.compose.runtime.mutableStateListOf<CollectionItem>() }
+    var firstClickBonusChance by remember { mutableStateOf(0.0f) }
+    var generalBonusChance by remember { mutableStateOf(0.0f) }
+    var roundsWithoutCard1 by remember { mutableStateOf(0) }
+    val context = LocalContext.current
+
+    // --- ระบบ Sound Effects (SFX) ระดับแอป ---
+    val soundPool = remember {
+        val attributes = AudioAttributes.Builder()
+            .setUsage(AudioAttributes.USAGE_GAME)
+            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+            .build()
+        SoundPool.Builder().setMaxStreams(5).setAudioAttributes(attributes).build()
+    }
+    
+    val soundClinkId = remember { 
+        val id = context.resources.getIdentifier("sword_clink", "raw", context.packageName)
+        if (id != 0) soundPool.load(context, id, 1) else -1
+    }
+    val soundSuccessId = remember { 
+        val id = context.resources.getIdentifier("pull_success", "raw", context.packageName)
+        if (id != 0) soundPool.load(context, id, 1) else -1
+    }
+
+    fun playSound(soundId: Int) {
+        if (soundId != -1) {
+            soundPool.play(soundId, 1f, 1f, 0, 0, 1f)
+        }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose { soundPool.release() }
+    }
+    // ------------------------------------
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -164,7 +197,25 @@ fun MainAppScreen() {
                 )
             }
             composable("play") {
-                PlayScreen(onCardCollected = { collectedCard = it })
+                PlayScreen(
+                    onCardCollected = { collectedCard = it },
+                    firstClickBonus = firstClickBonusChance,
+                    generalBonus = generalBonusChance,
+                    roundsWithoutCard1 = roundsWithoutCard1,
+                    onUpdateBonus = { 
+                        firstClickBonusChance = (firstClickBonusChance + 0.01f).coerceAtMost(1.0f) 
+                        generalBonusChance = (generalBonusChance + 0.03f).coerceAtMost(1.0f)
+                    },
+                    onResetFirstBonus = { 
+                        firstClickBonusChance = 0.0f 
+                        roundsWithoutCard1 = 0 // รีเซ็ตตัวนับการันตีเมื่อได้ Card 1
+                    },
+                    onResetGeneralBonus = { generalBonusChance = 0.0f },
+                    onIncrementRounds = { roundsWithoutCard1++ },
+                    playSound = ::playSound,
+                    soundClinkId = soundClinkId,
+                    soundSuccessId = soundSuccessId
+                )
             }
             composable("collections") {
                 CollectionsScreen(items = collectionsList)
@@ -176,39 +227,20 @@ fun MainAppScreen() {
 @Composable
 fun PlayScreen(
     onCardCollected: (String) -> Unit,
+    firstClickBonus: Float = 0f,
+    generalBonus: Float = 0f,
+    roundsWithoutCard1: Int = 0,
+    onUpdateBonus: () -> Unit = {},
+    onResetFirstBonus: () -> Unit = {},
+    onResetGeneralBonus: () -> Unit = {},
+    onIncrementRounds: () -> Unit = {},
+    playSound: (Int) -> Unit = {},
+    soundClinkId: Int = -1,
+    soundSuccessId: Int = -1,
     modifier: Modifier = Modifier
 ) {
-    val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     
-    // --- ระบบ Sound Effects (SFX) ---
-    val soundPool = remember {
-        val attributes = AudioAttributes.Builder()
-            .setUsage(AudioAttributes.USAGE_GAME)
-            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-            .build()
-        SoundPool.Builder().setMaxStreams(5).setAudioAttributes(attributes).build()
-    }
-    
-    // โหลดเสียงเตรียมไว้แบบ Dynamic (ช่วยให้ Compile ผ่านแม้ยังไม่มีไฟล์)
-    val soundClinkId = remember { 
-        val id = context.resources.getIdentifier("sword_clink", "raw", context.packageName)
-        if (id != 0) soundPool.load(context, id, 1) else -1
-    }
-    val soundSuccessId = remember { 
-        val id = context.resources.getIdentifier("pull_success", "raw", context.packageName)
-        if (id != 0) soundPool.load(context, id, 1) else -1
-    }
-
-    fun playSound(soundId: Int) {
-        soundPool.play(soundId, 1f, 1f, 0, 0, 1f)
-    }
-
-    DisposableEffect(Unit) {
-        onDispose { soundPool.release() }
-    }
-    // -----------------------------
-
     val shakeOffset = remember { Animatable(0f) }
     val yOffset = remember { Animatable(0f) } // สำหรับทำให้ดาบลอยขึ้น
     var clickCount by remember { mutableStateOf(0) }
@@ -330,24 +362,33 @@ fun PlayScreen(
                     ) {
                         clickCount++
                         
-                        // คำนวณโอกาสออก: 
-                        // ครั้งแรก (clickCount = 1) โอกาสแค่ 3% เพื่อลุ้น Card 1
-                        // ครั้งต่อๆ ไป (2-20) โอกาสเพิ่มขึ้นตามปกติ แต่จะไม่ได้ Card 1 แล้ว
+                        // --- ปรับปรุงเรทให้สมดุล (Smooth & Fair Balance) ---
                         val currentChance = when {
-                            clickCount == 1 -> 0.03f // โอกาส 3% ในครั้งแรก
-                            clickCount >= 20 -> 1.0f // การันตีครั้งที่ 20
-                            else -> 0.05f + (clickCount / 2) * 0.05f // โอกาสปกติ
+                            // ถ้าติด Hard Pity (รอบที่ 7) ให้กดทีเดียวออก 100%
+                            roundsWithoutCard1 >= 6 && clickCount == 1 -> 1.0f
+                            
+                            clickCount == 1 -> 0.02f + firstClickBonus // พื้นฐาน 2% สำหรับ Card 1
+                            clickCount >= 20 -> 1.0f // การันตี 100%
+                            clickCount < 10 -> 0.07f + generalBonus // ครั้งที่ 2-9 โอกาส 7%
+                            else -> {
+                                // ครั้งที่ 10-19: เริ่ม 15% และ +10% ทุกๆ 3 ครั้ง (Soft Pity)
+                                0.15f + generalBonus + ((clickCount - 10) / 3) * 0.10f
+                            }
                         }
                         
                         // สุ่มการ์ด
                         if (kotlin.random.Random.nextFloat() < currentChance) {
                             // ระบบเลือกการ์ด: 
-                            // ถ้าได้ในครั้งแรก (1%) -> ได้ Card 1 (Legendary Luck)
-                            // ถ้าได้หลังจากนั้น -> สุ่ม Card 2-10
-                            val nextCard = if (clickCount == 1) {
-                                cardList[0] // Card 1
+                            // เช็ค Hard Pity (ถ้าครบ 6 รอบแล้วยังไม่ได้ Card 1 รอบที่ 7 จะการันตี)
+                            val nextCard = if (roundsWithoutCard1 >= 6 || clickCount == 1) {
+                                onResetFirstBonus() // รีเซ็ตโบนัสเป็น 0% และรีเซ็ตตัวนับรอบ (Pity Reset)
+                                cardList[0] // มอบ Card 1
                             } else {
-                                // สุ่ม Card 2-10 (ยิ่งดึงเร็วยิ่งได้เลขต้นๆ)
+                                // ไม่ได้ Card 1 ในรอบนี้ -> เพิ่มตัวนับการันตีรอบถัดไป
+                                onIncrementRounds()
+                                onResetGeneralBonus() // รีเซ็ตโบนัสทั่วไป (เพราะดึงสำเร็จแล้ว)
+                                
+                                // สุ่ม Card 2-10 ตามช่วงเวลาที่ดึงได้
                                 when {
                                     clickCount <= 7 -> cardList.subList(1, 4).random() // Card 2-4
                                     clickCount <= 15 -> cardList.subList(1, 8).random() // Card 2-8
@@ -355,6 +396,11 @@ fun PlayScreen(
                                 }
                             }
                             
+                            // ถ้าได้การ์ดช้า (เกิน 10 ครั้ง) รอบถัดไปจะสะสมแต้มบุญ +1% และ +3%
+                            if (clickCount > 10) {
+                                onUpdateBonus()
+                            }
+
                             playSound(soundSuccessId) // เล่นเสียงตอนดึงสำเร็จ
                             isPullingSuccess = true // ล็อกการกดทันที
                             clickCount = 0 // รีเซ็ตการนับเมื่อได้การ์ด (Pity Reset)
