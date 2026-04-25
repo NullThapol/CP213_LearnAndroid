@@ -20,9 +20,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.ui.platform.LocalContext
-import android.media.MediaPlayer
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -76,22 +73,6 @@ fun MainAppScreen() {
     val navController = rememberNavController()
     var collectedCard by remember { mutableStateOf<String?>(null) }
     val collectionsList = remember { androidx.compose.runtime.mutableStateListOf<CollectionItem>() }
-    val context = LocalContext.current
-
-    // ระบบเล่นเพลง Soundtrack พื้นหลัง - ปรับปรุงให้ทำงานทันที
-    val mediaPlayer = remember(context) {
-        MediaPlayer.create(context, R.raw.appsoundtrack).apply {
-            isLooping = true
-            start() // เริ่มเล่นทันทีที่สร้าง
-        }
-    }
-
-    DisposableEffect(mediaPlayer) {
-        onDispose {
-            mediaPlayer.stop()
-            mediaPlayer.release()
-        }
-    }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
