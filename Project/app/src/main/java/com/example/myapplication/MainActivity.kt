@@ -21,6 +21,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import android.media.SoundPool
+import android.media.AudioAttributes
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
@@ -173,7 +178,37 @@ fun PlayScreen(
     onCardCollected: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+    
+    // --- ระบบ Sound Effects (SFX) ---
+    val soundPool = remember {
+        val attributes = AudioAttributes.Builder()
+            .setUsage(AudioAttributes.USAGE_GAME)
+            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+            .build()
+        SoundPool.Builder().setMaxStreams(5).setAudioAttributes(attributes).build()
+    }
+    
+    // โหลดเสียงเตรียมไว้แบบ Dynamic (ช่วยให้ Compile ผ่านแม้ยังไม่มีไฟล์)
+    val soundClinkId = remember { 
+        val id = context.resources.getIdentifier("sword_clink", "raw", context.packageName)
+        if (id != 0) soundPool.load(context, id, 1) else -1
+    }
+    val soundSuccessId = remember { 
+        val id = context.resources.getIdentifier("pull_success", "raw", context.packageName)
+        if (id != 0) soundPool.load(context, id, 1) else -1
+    }
+
+    fun playSound(soundId: Int) {
+        soundPool.play(soundId, 1f, 1f, 0, 0, 1f)
+    }
+
+    DisposableEffect(Unit) {
+        onDispose { soundPool.release() }
+    }
+    // -----------------------------
+
     val shakeOffset = remember { Animatable(0f) }
     val yOffset = remember { Animatable(0f) } // สำหรับทำให้ดาบลอยขึ้น
     var clickCount by remember { mutableStateOf(0) }
@@ -320,6 +355,7 @@ fun PlayScreen(
                                 }
                             }
                             
+                            playSound(soundSuccessId) // เล่นเสียงตอนดึงสำเร็จ
                             isPullingSuccess = true // ล็อกการกดทันที
                             clickCount = 0 // รีเซ็ตการนับเมื่อได้การ์ด (Pity Reset)
                             
@@ -336,6 +372,7 @@ fun PlayScreen(
                         }
 
                         coroutineScope.launch {
+                            playSound(soundClinkId) // เล่นเสียงตอนกดดาบ (ดาบสั่น)
                             // ทำการสั่น (ไป-กลับ) - ลดระยะการสั่นเหลือ 5f
                             repeat(3) {
                                 shakeOffset.animateTo(
