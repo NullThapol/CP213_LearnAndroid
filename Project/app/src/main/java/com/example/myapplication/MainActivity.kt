@@ -20,6 +20,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.ui.platform.LocalContext
+import android.media.MediaPlayer
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -73,6 +76,22 @@ fun MainAppScreen() {
     val navController = rememberNavController()
     var collectedCard by remember { mutableStateOf<String?>(null) }
     val collectionsList = remember { androidx.compose.runtime.mutableStateListOf<CollectionItem>() }
+    val context = LocalContext.current
+
+    // ระบบเล่นเพลง Soundtrack พื้นหลัง - ปรับปรุงให้ทำงานทันที
+    val mediaPlayer = remember(context) {
+        MediaPlayer.create(context, R.raw.appsoundtrack).apply {
+            isLooping = true
+            start() // เริ่มเล่นทันทีที่สร้าง
+        }
+    }
+
+    DisposableEffect(mediaPlayer) {
+        onDispose {
+            mediaPlayer.stop()
+            mediaPlayer.release()
+        }
+    }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -296,10 +315,10 @@ fun PlayScreen(
                         clickCount++
                         
                         // คำนวณโอกาสออก: 
-                        // ครั้งแรก (clickCount = 1) โอกาสแค่ 2% เพื่อลุ้น Card 1
+                        // ครั้งแรก (clickCount = 1) โอกาสแค่ 3% เพื่อลุ้น Card 1
                         // ครั้งต่อๆ ไป (2-20) โอกาสเพิ่มขึ้นตามปกติ แต่จะไม่ได้ Card 1 แล้ว
                         val currentChance = when {
-                            clickCount == 1 -> 0.02f // โอกาส 2% ในครั้งแรก
+                            clickCount == 1 -> 0.03f // โอกาส 3% ในครั้งแรก
                             clickCount >= 20 -> 1.0f // การันตีครั้งที่ 20
                             else -> 0.05f + (clickCount / 2) * 0.05f // โอกาสปกติ
                         }
