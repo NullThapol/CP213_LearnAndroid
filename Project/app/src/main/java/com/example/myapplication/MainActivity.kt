@@ -48,6 +48,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.layout.ContentScale
 import com.example.myapplication.ui.theme.MyApplicationTheme
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.clickable
@@ -382,7 +383,7 @@ fun PlayScreen(
                                 Box(modifier = Modifier.matchParentSize().background(androidx.compose.ui.graphics.Brush.linearGradient(colors = listOf(Color(0xFFE8F5E9), Color(0xFFF1F8E9)))))
                                 Box(modifier = Modifier.matchParentSize().border(6.dp, Color(0xFFD4AF37).copy(alpha = 0.4f))) // Outer Gold
                                 Box(modifier = Modifier.matchParentSize().padding(6.dp).border(2.dp, Color(0xFF4CAF50))) // Emerald Line
-                                Box(modifier = Modifier.matchParentSize().padding(12.dp).border(1.dp, Color(0xFFD4AF37))) // Inner Gold
+                                Box(modifier = Modifier.matchParentSize().padding(12.dp).border(1.dp, Color(0xFFD4AF37))) // Inner GoldLine
                             }
                             "The Scholar’s Peak" -> {
                                 Box(modifier = Modifier.matchParentSize().background(androidx.compose.ui.graphics.Brush.verticalGradient(colors = listOf(Color(0xFFE3F2FD), Color(0xFFE1F5FE)))))
@@ -498,10 +499,18 @@ fun PlayScreen(
     }
 
     Box(modifier = modifier.fillMaxSize()) {
+        // Background Image
+        Image(
+            painter = painterResource(id = R.drawable.background),
+            contentDescription = null,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop,
+            alignment = Alignment.Center
+        )
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(androidx.compose.material3.MaterialTheme.colorScheme.background)
         ) {
         // Logo Area with piercing sword
         Box(
@@ -660,7 +669,7 @@ fun PlayScreen(
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(text = "Infinite", fontSize = 12.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f))
+        Text(text = "Infinite", fontSize = 12.sp, color = Color.Yellow)
         Spacer(modifier = Modifier.width(4.dp))
         Switch(
             checked = isInfiniteMode,
@@ -672,4 +681,4 @@ fun PlayScreen(
         )
     }
 } // ปิด Box (outer)
-} // ปิด PlayScreen
+} // ปิด PlayScreen)
