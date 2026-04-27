@@ -33,15 +33,20 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.draw.rotate
 
 @Composable
 fun CardsScreen(
     card: String?, 
-    isFavoritedInitially: Boolean,
+    pullId: Int = 0,
+    pullCount: Int = 0,
     onFavoriteToggle: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var isFavorited by remember(card, isFavoritedInitially) { mutableStateOf(isFavoritedInitially) }
+    var isFavorited by remember(pullId) { mutableStateOf(false) }
 
     Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         if (card != null) {
@@ -49,86 +54,182 @@ fun CardsScreen(
             Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(16.dp)) {
                 Surface(
                     modifier = Modifier.fillMaxWidth(0.9f).height(480.dp),
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp),
-                    color = MaterialTheme.colorScheme.surface,
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(2.dp),
+                    color = when (fortune.luckLevel) {
+                        "Legendary" -> Color(0xFF0A0A0A)
+                        "Great Luck" -> when (fortune.name) {
+                            "The Gilded Heart" -> Color(0xFFFFEBEE)
+                            "The Merchant’s Greed" -> Color(0xFFE8F5E9)
+                            "The Scholar’s Peak" -> Color(0xFFE3F2FD)
+                            else -> MaterialTheme.colorScheme.surface
+                        }
+                        else -> MaterialTheme.colorScheme.surface
+                    },
                     tonalElevation = 4.dp,
                     shadowElevation = 12.dp,
-                    border = androidx.compose.foundation.BorderStroke(2.dp, fortune.color.copy(alpha = 0.5f))
+                    border = if (fortune.luckLevel == "Legendary" || fortune.luckLevel == "Great Luck") null else androidx.compose.foundation.BorderStroke(2.dp, fortune.color.copy(alpha = 0.5f))
                 ) {
-                    Column(
-                        modifier = Modifier.fillMaxSize().padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = "TODAY'S LUCK",
-                            style = MaterialTheme.typography.labelLarge,
-                            color = fortune.color,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 2.sp
-                        )
-                        
-                        Text(
-                            text = fortune.name,
-                            fontSize = 34.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = fortune.color,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(top = 16.dp)
-                        )
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        // Legendary Style (Swapped Pattern: Now Triple Layer Runic Frame in Gold)
+                        if (fortune.luckLevel == "Legendary") {
+                            Box(modifier = Modifier.matchParentSize().background(Color(0xFF0A0A0A))) // Original Black
+                            Box(modifier = Modifier.matchParentSize().border(6.dp, Color(0xFFD4AF37).copy(alpha = 0.4f))) // Outer Gold Glow
+                            Box(modifier = Modifier.matchParentSize().padding(4.dp).border(2.dp, Color(0xFFD4AF37))) // Main Gold Border
+                            Box(modifier = Modifier.matchParentSize().padding(10.dp).border(2.dp, Color(0xFFD4AF37).copy(alpha = 0.6f), androidx.compose.foundation.shape.CutCornerShape(12.dp))) // Inner Runic Accent
+                        }
 
-                        Text(
-                            text = "[ ${fortune.luckLevel} ]",
-                            fontWeight = FontWeight.Bold,
-                            color = fortune.color.copy(alpha = 0.7f),
-                            modifier = Modifier.padding(bottom = 16.dp)
-                        )
-                        
-                        Divider(color = fortune.color.copy(alpha = 0.3f), thickness = 1.dp)
-                        
-                        Text(
-                            text = fortune.description,
-                            style = MaterialTheme.typography.bodyLarge,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(vertical = 24.dp),
-                            lineHeight = 24.sp
-                        )
-
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Row(modifier = Modifier.fillMaxWidth()) {
-                                Text("Pros: ", fontWeight = FontWeight.Bold, color = Color(0xFF4CAF50))
-                                Text(fortune.pro, style = MaterialTheme.typography.bodyMedium)
-                            }
-                            if (fortune.con != "-") {
-                                Row(modifier = Modifier.fillMaxWidth()) {
-                                    Text("Cons: ", fontWeight = FontWeight.Bold, color = Color(0xFFF44336))
-                                    Text(fortune.con, style = MaterialTheme.typography.bodyMedium)
+                        // Unique Styles for Great Luck Cards
+                        if (fortune.luckLevel == "Great Luck") {
+                            when (fortune.name) {
+                                "The Gilded Heart" -> {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .background(
+                                                androidx.compose.ui.graphics.Brush.radialGradient(
+                                                    colors = listOf(Color(0xFFFFEBEE), Color(0xFFFF69B4).copy(alpha = 0.3f))
+                                                )
+                                            )
+                                    )
+                                    // Complex Frame
+                                    Box(modifier = Modifier.fillMaxSize().border(8.dp, Color(0xFFFF69B4).copy(alpha = 0.2f))) // Outer soft glow
+                                    Box(modifier = Modifier.fillMaxSize().padding(4.dp).border(2.dp, Color(0xFFFF69B4))) // Main border
+                                    Box(modifier = Modifier.fillMaxSize().padding(10.dp).border(1.dp, Color(0xFFFF69B4).copy(alpha = 0.5f))) // Inner accent
+                                    // Corner accents (simulated)
+                                    Box(modifier = Modifier.fillMaxSize().padding(2.dp).border(4.dp, Color(0xFFFF69B4), androidx.compose.foundation.shape.CutCornerShape(20.dp)))
+                                }
+                                "The Merchant’s Greed" -> {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .background(
+                                                androidx.compose.ui.graphics.Brush.linearGradient(
+                                                    colors = listOf(Color(0xFFE8F5E9), Color(0xFFD4AF37).copy(alpha = 0.1f), Color(0xFFC8E6C9))
+                                                )
+                                            )
+                                    )
+                                    // Layered Gold/Emerald Frame
+                                    Box(modifier = Modifier.fillMaxSize().border(6.dp, Color(0xFFD4AF37).copy(alpha = 0.6f))) // Outer Gold
+                                    Box(modifier = Modifier.fillMaxSize().padding(6.dp).border(2.dp, Color(0xFF4CAF50))) // Emerald Line
+                                    Box(modifier = Modifier.fillMaxSize().padding(12.dp).border(1.dp, Color(0xFFD4AF37))) // Inner Gold Line
+                                }
+                                "The Scholar’s Peak" -> {
+                                    // Thin Blue Double-Border (Swapped Pattern)
+                                    Box(modifier = Modifier.fillMaxSize().background(Color(0xFFE3F2FD))) // Solid Light Blue
+                                    Box(modifier = Modifier.fillMaxSize().border(4.dp, Color(0xFF2196F3).copy(alpha = 0.8f))) // Outer Blue Line
+                                    Box(modifier = Modifier.fillMaxSize().padding(6.dp).border(1.dp, Color(0xFF2196F3).copy(alpha = 0.5f))) // Inner Blue Line
                                 }
                             }
                         }
-                        
-                        Spacer(modifier = Modifier.weight(1f))
-                        
-                        Divider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
-                        
-                        // ปุ่ม Favorite ด้านใน Card
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
+
+                        Column(
+                            modifier = Modifier.fillMaxSize().padding(28.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Text("Add to Favorites", style = MaterialTheme.typography.bodySmall)
-                            IconButton(
-                                onClick = { 
-                                    onFavoriteToggle(card)
-                                    isFavorited = !isFavorited
-                                }
+                            Text(
+                                text = "TODAY'S LUCK",
+                                style = MaterialTheme.typography.labelLarge,
+                                color = if (fortune.luckLevel == "Legendary") Color(0xFFD4AF37) else fortune.color,
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 6.sp,
+                                modifier = Modifier.padding(top = 8.dp)
+                            )
+                            
+                            Text(
+                                text = fortune.name.uppercase(),
+                                fontSize = 28.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = if (fortune.luckLevel == "Legendary") Color(0xFFD4AF37) else fortune.color,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.padding(top = 20.dp),
+                                letterSpacing = 2.sp
+                            )
+
+                            Text(
+                                text = "--- ${fortune.luckLevel.uppercase()} ---",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 12.sp,
+                                color = if (fortune.luckLevel == "Legendary") Color(0xFFD4AF37).copy(alpha = 0.7f) else fortune.color.copy(alpha = 0.7f),
+                                modifier = Modifier.padding(top = 4.dp, bottom = 20.dp),
+                                letterSpacing = 1.sp
+                            )
+                            
+                            Divider(
+                                color = if (fortune.luckLevel == "Legendary") Color(0xFFD4AF37) else fortune.color.copy(alpha = 0.3f), 
+                                thickness = if (fortune.luckLevel == "Legendary") 2.dp else 1.dp,
+                                modifier = Modifier.padding(horizontal = 20.dp)
+                            )
+                            
+                            Text(
+                                text = fortune.description,
+                                style = MaterialTheme.typography.bodyLarge,
+                                textAlign = TextAlign.Center,
+                                color = if (fortune.luckLevel == "Legendary") Color(0xFFE0E0E0) else MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.padding(vertical = 30.dp),
+                                lineHeight = 28.sp,
+                                fontWeight = if (fortune.luckLevel == "Legendary") FontWeight.Medium else FontWeight.Normal
+                            )
+
+                            Column(
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp),
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
-                                Icon(
-                                    imageVector = if (isFavorited) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-                                    contentDescription = "Favorite",
-                                    tint = if (isFavorited) Color.Red else fortune.color,
-                                    modifier = Modifier.size(32.dp)
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Box(modifier = Modifier.size(8.dp).background(if (fortune.luckLevel == "Legendary") Color(0xFFD4AF37) else Color(0xFF4CAF50)))
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("PROS: ", fontWeight = FontWeight.Bold, color = if (fortune.luckLevel == "Legendary") Color(0xFFD4AF37) else Color(0xFF4CAF50), fontSize = 12.sp)
+                                    Text(fortune.pro, style = MaterialTheme.typography.bodyMedium, color = if (fortune.luckLevel == "Legendary") Color.White.copy(alpha = 0.9f) else MaterialTheme.colorScheme.onSurface)
+                                }
+                                if (fortune.con != "-") {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Box(modifier = Modifier.size(8.dp).background(Color(0xFFF44336)))
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text("CONS: ", fontWeight = FontWeight.Bold, color = Color(0xFFF44336), fontSize = 12.sp)
+                                        Text(fortune.con, style = MaterialTheme.typography.bodyMedium, color = if (fortune.luckLevel == "Legendary") Color.White.copy(alpha = 0.9f) else MaterialTheme.colorScheme.onSurface)
+                                    }
+                                }
+                            }
+                            
+                            Spacer(modifier = Modifier.weight(1f))
+                            
+                            Divider(color = if (fortune.luckLevel == "Legendary") Color(0xFFD4AF37).copy(alpha = 0.2f) else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+
+                            if (pullCount > 0) {
+                                Text(
+                                    text = "Pulled in $pullCount clicks",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = if (fortune.luckLevel == "Legendary") Color(0xFFD4AF37).copy(alpha = 0.8f) else fortune.color.copy(alpha = 0.6f),
+                                    modifier = Modifier.padding(top = 12.dp),
+                                    letterSpacing = 1.sp
                                 )
+                            }
+                            
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                modifier = Modifier.fillMaxWidth().padding(top = 12.dp)
+                            ) {
+                                Text(
+                                    text = if (isFavorited) "ADDED TO COLLECTION" else "ADD TO FAVORITES",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = if (isFavorited) Color(0xFF4CAF50) else if (fortune.luckLevel == "Legendary") Color(0xFFD4AF37).copy(alpha = 0.7f) else MaterialTheme.colorScheme.onSurface,
+                                    letterSpacing = 1.sp
+                                )
+                                IconButton(
+                                    onClick = { 
+                                        if (!isFavorited) {
+                                            onFavoriteToggle(card)
+                                            isFavorited = true
+                                        }
+                                    }
+                                ) {
+                                    Icon(
+                                        imageVector = if (isFavorited) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                                        contentDescription = "Favorite",
+                                        tint = if (isFavorited) Color.Red else if (fortune.luckLevel == "Legendary") Color(0xFFD4AF37) else fortune.color,
+                                        modifier = Modifier.size(32.dp)
+                                    )
+                                }
                             }
                         }
                     }

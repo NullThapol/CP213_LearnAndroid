@@ -6,6 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -60,6 +61,7 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
+import androidx.compose.foundation.border
 
 import androidx.compose.ui.graphics.Color
 
@@ -86,8 +88,8 @@ fun getCardFortune(cardName: String): CardFortune {
         )
         "Card 3" -> CardFortune(
             "The Merchant’s Greed", "Great Luck", 
-            "เงินทองไหลมาเทมาดั่งสายน้ำ แต่ระวังจะโดนเพื่อนขอยืมเงินนะ",
-            "โชคลาภ/การเงินดีเยี่ยม", "สังคม/เพื่อนฝูง (ระวังคนหวังผลประโยชน์)", Color(0xFF4CAF50)
+            "เงินทองไหลมาเทมาดั่งสายน้ำ แต่อาจจะมีลืมเศษเงินทอนบ้างนะ",
+            "โชคลาภ/การเงินดีเยี่ยม", "อาจจะลืมเศษเงินทอนไว้ที่ร้านค้า", Color(0xFF4CAF50)
         )
         "Card 4" -> CardFortune(
             "The Scholar’s Peak", "Great Luck", 
@@ -140,16 +142,24 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-data class CollectionItem(val name: String, val date: String)
+data class CollectionItem(val name: String, val date: String, val pullCount: Int)
 
 @Composable
 fun MainAppScreen() {
     val navController = rememberNavController()
     var collectedCard by remember { mutableStateOf<String?>(null) }
-    val collectionsList = remember { androidx.compose.runtime.mutableStateListOf<CollectionItem>() }
+    val collectionsList = remember { 
+        androidx.compose.runtime.mutableStateListOf<CollectionItem>().apply {
+            addAll(List(10) { index -> 
+                CollectionItem("Card ${index + 1}", "Initial Collection", 0) 
+            })
+        }
+    }
     var firstClickBonusChance by remember { mutableStateOf(0.0f) }
     var generalBonusChance by remember { mutableStateOf(0.0f) }
     var roundsWithoutCard1 by remember { mutableStateOf(0) }
+    var pullId by remember { mutableStateOf(0) } // ใช้สำหรับรีเซ็ตหน้า CardsScreen
+    var finalClickCount by remember { mutableStateOf(0) } // เพิ่มที่ระดับแอปเพื่อให้แชร์ข้ามหน้าได้
     val context = LocalContext.current
 
     // --- ระบบ Sound Effects (SFX) ระดับแอป ---
@@ -250,24 +260,22 @@ fun MainAppScreen() {
             modifier = Modifier.padding(innerPadding)
         ) {
             composable("cards") {
-                val isCardInCollection = collectionsList.any { it.name == collectedCard }
                 CardsScreen(
                     card = collectedCard,
-                    isFavoritedInitially = isCardInCollection,
+                    pullId = pullId,
+                    pullCount = finalClickCount, // ส่งจำนวนครั้งที่กดไปแสดง
                     onFavoriteToggle = { cardName ->
-                        val today = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date())
-                        val existingItem = collectionsList.find { it.name == cardName }
-                        if (existingItem != null) {
-                            collectionsList.remove(existingItem)
-                        } else {
-                            collectionsList.add(CollectionItem(cardName, today))
-                        }
+                        val today = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.getDefault()).format(java.util.Date())
+                        collectionsList.add(CollectionItem(cardName, today, finalClickCount))
                     }
                 )
             }
             composable("play") {
                 PlayScreen(
-                    onCardCollected = { collectedCard = it },
+                    onCardCollected = { 
+                        collectedCard = it 
+                        pullId++ // เพิ่ม pullId ทุกครั้งที่ได้การ์ดใบใหม่
+                    },
                     firstClickBonus = firstClickBonusChance,
                     generalBonus = generalBonusChance,
                     roundsWithoutCard1 = roundsWithoutCard1,
@@ -281,6 +289,8 @@ fun MainAppScreen() {
                     },
                     onResetGeneralBonus = { generalBonusChance = 0.0f },
                     onIncrementRounds = { roundsWithoutCard1++ },
+                    finalClickCount = finalClickCount,
+                    onSetFinalCount = { finalClickCount = it },
                     playSound = ::playSound,
                     soundClinkId = soundClinkId,
                     soundSuccessId = soundSuccessId
@@ -303,6 +313,8 @@ fun PlayScreen(
     onResetFirstBonus: () -> Unit = {},
     onResetGeneralBonus: () -> Unit = {},
     onIncrementRounds: () -> Unit = {},
+    finalClickCount: Int = 0,
+    onSetFinalCount: (Int) -> Unit = {},
     playSound: (Int) -> Unit = {},
     soundClinkId: Int = -1,
     soundSuccessId: Int = -1,
@@ -314,14 +326,14 @@ fun PlayScreen(
     val yOffset = remember { Animatable(0f) } // สำหรับทำให้ดาบลอยขึ้น
     var clickCount by remember { mutableStateOf(0) }
     
-    // Once a Day Mode
-    var onceADayEnabled by remember { mutableStateOf(false) }
+    // Infinite Mode (Default is False, meaning Daily Limit is ON)
+    var isInfiniteMode by remember { mutableStateOf(false) }
     var hasPulledToday by remember { mutableStateOf(false) }
 
     // Gacha States
     var pulledCard by remember { mutableStateOf<String?>(null) }
     var showCardDialog by remember { mutableStateOf(false) }
-    var isPullingSuccess by remember { mutableStateOf(false) } // ล็อกการกดทันทีที่สำเร็จ
+    var isPullingSuccess by remember { mutableStateOf(false) }
     val cardList = List(10) { "Card ${it + 1}" }
 
     if (showCardDialog && pulledCard != null) {
@@ -334,68 +346,152 @@ fun PlayScreen(
                     isPullingSuccess = false
                 }
             },
-            title = { 
-                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                    Text(
-                        text = if (fortune.luckLevel == "Legendary") "CONGRATULATIONS!" else "Sword Found!",
-                        color = if (fortune.luckLevel == "Legendary") Color(0xFFFFD700) else MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.ExtraBold,
-                        fontSize = 24.sp
-                    )
+            containerColor = when (fortune.luckLevel) {
+                "Legendary" -> Color(0xFF0A0A0A)
+                "Great Luck" -> when (fortune.name) {
+                    "The Gilded Heart" -> Color(0xFFFFEBEE)
+                    "The Merchant’s Greed" -> Color(0xFFE8F5E9)
+                    "The Scholar’s Peak" -> Color(0xFFE3F2FD)
+                    else -> MaterialTheme.colorScheme.surface
                 }
+                else -> MaterialTheme.colorScheme.surface
             },
-            text = { 
-                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                    Text(
-                        text = fortune.name,
-                        style = androidx.compose.ui.text.TextStyle(
-                            fontSize = 28.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = fortune.color
-                        ),
-                        textAlign = TextAlign.Center
-                    )
-                    Text(
-                        text = "[ ${fortune.luckLevel} ]",
-                        color = fortune.color.copy(alpha = 0.8f),
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-                    
-                    Divider(color = fortune.color.copy(alpha = 0.3f), thickness = 1.dp)
-                    
-                    Text(
-                        text = fortune.description,
-                        style = MaterialTheme.typography.bodyLarge,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(vertical = 12.dp)
-                    )
-                    
-                    Row(modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
-                        Text("Pros: ", fontWeight = FontWeight.Bold, color = Color(0xFF4CAF50))
-                        Text(fortune.pro, style = MaterialTheme.typography.bodyMedium)
+            title = if (fortune.luckLevel == "Normal Luck" || fortune.luckLevel == "Bad Luck") {
+                { Text(text = "Sword Found!", fontWeight = FontWeight.Bold) }
+            } else null,
+            text = {
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    // Legendary Style (Swapped Pattern: Now Triple Layer Runic Frame in Gold)
+                    if (fortune.luckLevel == "Legendary") {
+                        Box(modifier = Modifier.matchParentSize().background(Color(0xFF0A0A0A))) // Original Black
+                        Box(modifier = Modifier.matchParentSize().border(6.dp, Color(0xFFD4AF37).copy(alpha = 0.4f))) // Outer Gold Glow
+                        Box(modifier = Modifier.matchParentSize().padding(4.dp).border(2.dp, Color(0xFFD4AF37))) // Main Gold Border
+                        Box(modifier = Modifier.matchParentSize().padding(10.dp).border(2.dp, Color(0xFFD4AF37).copy(alpha = 0.6f), androidx.compose.foundation.shape.CutCornerShape(12.dp))) // Inner Runic Accent
                     }
-                    if (fortune.con != "-") {
-                        Row(modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
-                            Text("Cons: ", fontWeight = FontWeight.Bold, color = Color(0xFFF44336))
-                            Text(fortune.con, style = MaterialTheme.typography.bodyMedium)
+
+                    // Special Backgrounds for Great Luck
+                    if (fortune.luckLevel == "Great Luck") {
+                        when (fortune.name) {
+                            "The Gilded Heart" -> {
+                                Box(modifier = Modifier.matchParentSize().background(androidx.compose.ui.graphics.Brush.radialGradient(colors = listOf(Color(0xFFFFEBEE), Color(0xFFFF69B4).copy(alpha = 0.2f)))))
+                                Box(modifier = Modifier.matchParentSize().border(8.dp, Color(0xFFFF69B4).copy(alpha = 0.1f))) // Outer Glow
+                                Box(modifier = Modifier.matchParentSize().padding(4.dp).border(2.dp, Color(0xFFFF69B4))) // Main Frame
+                                Box(modifier = Modifier.matchParentSize().padding(10.dp).border(1.dp, Color(0xFFFF69B4).copy(alpha = 0.5f))) // Inner Accent
+                            }
+                            "The Merchant’s Greed" -> {
+                                Box(modifier = Modifier.matchParentSize().background(androidx.compose.ui.graphics.Brush.linearGradient(colors = listOf(Color(0xFFE8F5E9), Color(0xFFF1F8E9)))))
+                                Box(modifier = Modifier.matchParentSize().border(6.dp, Color(0xFFD4AF37).copy(alpha = 0.4f))) // Outer Gold
+                                Box(modifier = Modifier.matchParentSize().padding(6.dp).border(2.dp, Color(0xFF4CAF50))) // Emerald Line
+                                Box(modifier = Modifier.matchParentSize().padding(12.dp).border(1.dp, Color(0xFFD4AF37))) // Inner Gold
+                            }
+                            "The Scholar’s Peak" -> {
+                                Box(modifier = Modifier.matchParentSize().background(androidx.compose.ui.graphics.Brush.verticalGradient(colors = listOf(Color(0xFFE3F2FD), Color(0xFFE1F5FE)))))
+                                Box(modifier = Modifier.matchParentSize().border(4.dp, Color(0xFF2196F3).copy(alpha = 0.2f)))
+                                Box(modifier = Modifier.matchParentSize().padding(4.dp).border(2.dp, Color(0xFF2196F3)))
+                                Box(modifier = Modifier.matchParentSize().padding(10.dp).border(2.dp, Color(0xFF2196F3).copy(alpha = 0.6f), androidx.compose.foundation.shape.CutCornerShape(10.dp)))
+                            }
+                        }
+                    }
+
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally, 
+                        modifier = Modifier.fillMaxWidth().padding(if (fortune.luckLevel == "Legendary") 20.dp else 16.dp)
+                    ) {
+                        // Title for Special Cards
+                        if (fortune.luckLevel == "Legendary" || fortune.luckLevel == "Great Luck") {
+                            Text(
+                                text = if (fortune.luckLevel == "Legendary") "CONGRATULATIONS!" else "SWORD FOUND!",
+                                color = if (fortune.luckLevel == "Legendary") Color(0xFFD4AF37) else fortune.color.copy(alpha = 0.8f),
+                                fontWeight = FontWeight.ExtraBold,
+                                fontSize = 16.sp,
+                                letterSpacing = 2.sp,
+                                modifier = Modifier.padding(bottom = 12.dp)
+                            )
+                        }
+                        Text(
+                            text = fortune.name.uppercase(),
+                            style = androidx.compose.ui.text.TextStyle(
+                                fontSize = 24.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = if (fortune.luckLevel == "Legendary") Color(0xFFD4AF37) else fortune.color,
+                                letterSpacing = 2.sp
+                            ),
+                            textAlign = TextAlign.Center
+                        )
+                        Text(
+                            text = "--- ${fortune.luckLevel.uppercase()} ---",
+                            color = if (fortune.luckLevel == "Legendary") Color(0xFFD4AF37).copy(alpha = 0.7f) else fortune.color.copy(alpha = 0.8f),
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                        
+                        Divider(color = if (fortune.luckLevel == "Legendary") Color(0xFFD4AF37) else fortune.color.copy(alpha = 0.3f), thickness = 1.dp)
+                        
+                        Text(
+                            text = fortune.description,
+                            style = MaterialTheme.typography.bodyLarge,
+                            textAlign = TextAlign.Center,
+                            color = if (fortune.luckLevel == "Legendary") Color.White else MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.padding(vertical = 12.dp)
+                        )
+                        
+                        Row(modifier = Modifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Box(modifier = Modifier.size(6.dp).background(if (fortune.luckLevel == "Legendary") Color(0xFFD4AF37) else Color(0xFF4CAF50)))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("PROS: ", fontWeight = FontWeight.Bold, color = if (fortune.luckLevel == "Legendary") Color(0xFFD4AF37) else Color(0xFF4CAF50), fontSize = 12.sp)
+                            Text(fortune.pro, style = MaterialTheme.typography.bodyMedium, color = if (fortune.luckLevel == "Legendary") Color.White.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurface)
+                        }
+
+                        if (fortune.con != "-") {
+                            Row(modifier = Modifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Box(modifier = Modifier.size(6.dp).background(Color(0xFFF44336)))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("CONS: ", fontWeight = FontWeight.Bold, color = Color(0xFFF44336), fontSize = 12.sp)
+                                Text(fortune.con, style = MaterialTheme.typography.bodyMedium, color = if (fortune.luckLevel == "Legendary") Color.White.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurface)
+                            }
+                        }
+                        
+                        Text(
+                            text = "Got it in $finalClickCount pulls!",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (fortune.luckLevel == "Legendary") Color(0xFFD4AF37).copy(alpha = 0.6f) else fortune.color.copy(alpha = 0.6f),
+                            modifier = Modifier.padding(top = 16.dp)
+                        )
+                        if (fortune.luckLevel == "Legendary" || fortune.luckLevel == "Great Luck") {
+                            Button(
+                                onClick = { 
+                                    onCardCollected(pulledCard!!)
+                                    showCardDialog = false 
+                                    coroutineScope.launch { 
+                                        yOffset.animateTo(0f)
+                                        isPullingSuccess = false
+                                    }
+                                },
+                                colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = if (fortune.luckLevel == "Legendary") Color(0xFFD4AF37) else fortune.color),
+                                modifier = Modifier.padding(top = 16.dp).align(Alignment.End)
+                            ) {
+                                Text("COLLECT", color = if (fortune.luckLevel == "Legendary") Color.Black else Color.White)
+                            }
                         }
                     }
                 }
             },
             confirmButton = {
-                Button(
-                    onClick = { 
-                        onCardCollected(pulledCard!!)
-                        showCardDialog = false 
-                        coroutineScope.launch { 
-                            yOffset.animateTo(0f)
-                            isPullingSuccess = false
-                        }
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = fortune.color)
-                ) {
-                    Text("Collect", color = Color.White)
+                if (fortune.luckLevel == "Normal Luck" || fortune.luckLevel == "Bad Luck") {
+                    Button(
+                        onClick = { 
+                            onCardCollected(pulledCard!!)
+                            showCardDialog = false 
+                            coroutineScope.launch { 
+                                yOffset.animateTo(0f)
+                                isPullingSuccess = false
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = fortune.color)
+                    ) {
+                        Text("Collect")
+                    }
                 }
             }
         )
@@ -464,7 +560,7 @@ fun PlayScreen(
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null, // ลบเอฟเฟกต์การกดสีเทาออก
-                        enabled = clickCount < 20 && !isPullingSuccess && (!onceADayEnabled || !hasPulledToday) // ล็อกถ้าโหมดวันละครั้งเปิดอยู่และดึงไปแล้ว
+                        enabled = clickCount < 20 && !isPullingSuccess && (isInfiniteMode || !hasPulledToday) // ล็อกถ้าไม่ได้เปิดโหมด Infinite และดึงไปแล้วในวันนี้
                     ) {
                         clickCount++
                         
@@ -494,11 +590,11 @@ fun PlayScreen(
                                 onIncrementRounds()
                                 onResetGeneralBonus() // รีเซ็ตโบนัสทั่วไป (เพราะดึงสำเร็จแล้ว)
                                 
-                                // สุ่ม Card 2-10 ตามช่วงเวลาที่ดึงได้
+                                // สุ่ม Card ตามช่วงเวลาที่ดึงได้แบบแบ่งแยกชัดเจน
                                 when {
-                                    clickCount <= 7 -> cardList.subList(1, 4).random() // Card 2-4
-                                    clickCount <= 15 -> cardList.subList(1, 8).random() // Card 2-8
-                                    else -> cardList.subList(7, 10).random() // Card 8-10
+                                    clickCount <= 7 -> cardList.subList(1, 4).random() // Card 2-4 (Great Luck)
+                                    clickCount <= 15 -> cardList.subList(4, 7).random() // Card 5-7 (Normal Luck)
+                                    else -> cardList.subList(7, 10).random() // Card 8-10 (Bad Luck)
                                 }
                             }
                             
@@ -508,6 +604,7 @@ fun PlayScreen(
                             }
 
                             playSound(soundSuccessId) // เล่นเสียงตอนดึงสำเร็จ
+                            onSetFinalCount(clickCount) // บันทึกจำนวนครั้งที่กดจนสำเร็จ
                             isPullingSuccess = true // ล็อกการกดทันที
                             clickCount = 0 // รีเซ็ตการนับเมื่อได้การ์ด (Pity Reset)
                             
@@ -519,7 +616,7 @@ fun PlayScreen(
                                 )
                                 pulledCard = nextCard
                                 showCardDialog = true
-                                if (onceADayEnabled) hasPulledToday = true // บันทึกว่าดึงไปแล้วในโหมดรายวัน
+                                if (!isInfiniteMode) hasPulledToday = true // บันทึกว่าดึงไปแล้วถ้าอยู่ในโหมดปกติ (ไม่ใช่ Infinite)
                             }
                         }
 
@@ -556,20 +653,20 @@ fun PlayScreen(
             .align(Alignment.BottomCenter)
     )
 
-    // Once a Day Toggle - ขวาสุดบนสุดของ Box
+    // Infinite Mode Toggle - ขวาสุดบนสุดของ Box
     Row(
         modifier = Modifier
             .align(Alignment.TopEnd)
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(text = "Daily", fontSize = 12.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f))
+        Text(text = "Infinite", fontSize = 12.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f))
         Spacer(modifier = Modifier.width(4.dp))
         Switch(
-            checked = onceADayEnabled,
+            checked = isInfiniteMode,
             onCheckedChange = { 
-                onceADayEnabled = it
-                if (!it) hasPulledToday = false
+                isInfiniteMode = it
+                if (it) hasPulledToday = false
             },
             modifier = Modifier.scale(0.7f)
         )
